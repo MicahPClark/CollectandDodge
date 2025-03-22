@@ -1,0 +1,1540 @@
+!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collect and Dodge</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #121212;
+            font-family: 'Montserrat', sans-serif;
+            background-image: radial-gradient(circle, #252525 0%, #121212 100%);
+            overflow: hidden;
+        }
+        .bg-stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: twinkle linear infinite;
+        }
+        @keyframes twinkle {
+            0% { opacity: 0; }
+            50% { opacity: 0.5; }
+            100% { opacity: 0; }
+        }
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 500px;
+            background-color: #1a1a2e;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0,0,0,0.7);
+            border-radius: 12px;
+            border: 2px solid #30336b;
+        }
+        #game-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            background-color: rgba(0, 0, 0, 0.4);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px;
+            box-sizing: border-box;
+            z-index: 15;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        #player {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: #4facfe;
+            border-radius: 50%;
+            z-index: 10;
+            box-shadow: 0 0 15px rgba(79, 172, 254, 0.7);
+            transition: box-shadow 0.3s, transform 0.2s;
+        }
+        .shield {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: transparent;
+            border: 3px solid #4facfe;
+            border-radius: 50%;
+            z-index: 9;
+            opacity: 0.7;
+            animation: shieldPulse 1s infinite alternate;
+        }
+        @keyframes shieldPulse {
+            0% {
+                transform: scale(1);
+                border-color: #4facfe;
+            }
+            100% {
+                transform: scale(1.1);
+                border-color: #00f2fe;
+            }
+        }
+        .power-up {
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            background-color: #00f2fe;
+            border-radius: 5px;
+            transform: rotate(45deg);
+            animation: rotatePowerup 3s linear infinite;
+        }
+        @keyframes rotatePowerup {
+            0% {
+                transform: rotate(45deg);
+                box-shadow: 0 0 15px rgba(0, 242, 254, 0.7);
+            }
+            50% {
+                transform: rotate(225deg);
+                box-shadow: 0 0 25px rgba(0, 242, 254, 0.9);
+            }
+            100% {
+                transform: rotate(405deg);
+                box-shadow: 0 0 15px rgba(0, 242, 254, 0.7);
+            }
+        }
+        .collectible {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #ffd700;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite alternate;
+        }
+        .collectible-rare {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background-color: #da22ff;
+            border-radius: 50%;
+            animation: pulsePurple 1.2s infinite alternate;
+        }
+        .collectible-special {
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            background-color: #00d2d3;
+            border-radius: 50%;
+            animation: pulseGreen 1.8s infinite alternate;
+        }
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+            }
+            100% {
+                transform: scale(1.1);
+                box-shadow: 0 0 20px rgba(255, 215, 0, 0.9);
+            }
+        }
+        @keyframes pulsePurple {
+            0% {
+                transform: scale(1) rotate(0deg);
+                box-shadow: 0 0 10px rgba(218, 34, 255, 0.6);
+            }
+            100% {
+                transform: scale(1.2) rotate(45deg);
+                box-shadow: 0 0 25px rgba(218, 34, 255, 0.9);
+            }
+        }
+        @keyframes pulseGreen {
+            0% {
+                transform: scale(1) rotate(0deg);
+                box-shadow: 0 0 10px rgba(0, 210, 211, 0.6);
+            }
+            100% {
+                transform: scale(1.15) rotate(-45deg);
+                box-shadow: 0 0 30px rgba(0, 210, 211, 0.9);
+            }
+        }
+        .obstacle {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-color: #ff5252;
+            border-radius: 8px;
+            box-shadow: 0 0 12px rgba(255, 82, 82, 0.7);
+            transition: transform 0.3s;
+        }
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background-color: #ffd700;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 5;
+        }
+        #score {
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        #combo-display {
+            position: absolute;
+            top: 50px;
+            left: 10px;
+            color: #ffd700;
+            font-size: 14px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        #multiplier-display {
+            position: absolute;
+            top: 70px;
+            left: 10px;
+            color: #da22ff;
+            font-size: 14px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        #timer {
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        #level {
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .game-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.85);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            padding: 30px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        #game-over {
+            display: none;
+        }
+        .game-screen h2 {
+            color: white;
+            font-size: 42px;
+            margin-bottom: 20px;
+            font-family: 'Orbitron', sans-serif;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        #final-score {
+            color: #ffd700;
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        #high-score {
+            color: #4facfe;
+            font-size: 22px;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+        .game-btn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4);
+            font-family: 'Montserrat', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .game-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(79, 172, 254, 0.6);
+        }
+        .game-btn:active {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(79, 172, 254, 0.4);
+        }
+        #start-screen {
+            display: flex;
+        }
+        #start-screen h1 {
+            color: white;
+            font-size: 46px;
+            margin-bottom: 20px;
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 10px rgba(79, 172, 254, 0.3);
+            letter-spacing: 2px;
+            text-align: center;
+        }
+        #instructions {
+            color: white;
+            width: 90%;
+            text-align: center;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            font-size: 15px;
+            background-color: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 600px;
+        }
+        #instructions p {
+            margin: 8px 0;
+        }
+        .collectible-display {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin: 0 5px;
+            vertical-align: middle;
+        }
+        .power-up-display {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background-color: #00f2fe;
+            border-radius: 2px;
+            transform: rotate(45deg);
+            margin: 0 5px;
+            vertical-align: middle;
+        }
+        .difficulty-indicator {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            display: flex;
+            align-items: center;
+            color: white;
+            font-size: 14px;
+            background-color: rgba(0,0,0,0.4);
+            padding: 5px 10px;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+        .difficulty-meter {
+            margin-left: 10px;
+            width: 100px;
+            height: 8px;
+            background-color: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .difficulty-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+            width: 0%;
+            transition: width 0.5s;
+        }
+        .stat-container {
+            display: flex;
+            align-items: center;
+        }
+        .stat-icon {
+            margin-right: 5px;
+            font-size: 18px;
+        }
+        #win-screen {
+            display: none;
+        }
+        .win-title {
+            color: white;
+            font-size: 48px;
+            margin-bottom: 20px;
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+            letter-spacing: 2px;
+            animation: winPulse 2s infinite alternate;
+        }
+        @keyframes winPulse {
+            0% {
+                transform: scale(1);
+                text-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+            }
+            100% {
+                transform: scale(1.05);
+                text-shadow: 0 2px 20px rgba(255, 215, 0, 0.8);
+            }
+        }
+        .win-message {
+            color: white;
+            font-size: 22px;
+            margin-bottom: 30px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 1.6;
+        }
+        .celebration {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: gold;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .objectives-section {
+            background-color: rgba(79, 172, 254, 0.2);
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid rgba(79, 172, 254, 0.4);
+        }
+        .collectible-info {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+        .collectible-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-stars" id="stars-container"></div>
+    <div id="game-container">
+        <div id="game-header">
+            <div class="stat-container">
+                <span class="stat-icon">🏆</span>
+                <span id="score">Score: 0</span>
+            </div>
+            <div class="stat-container">
+                <span class="stat-icon">⬆️</span>
+                <span id="level">Level: 1</span>
+            </div>
+            <div class="stat-container">
+                <span class="stat-icon">⏱️</span>
+                <span id="timer">Time: 60</span>
+            </div>
+        </div>
+        <div id="combo-display">Combo: x0</div>
+        <div id="multiplier-display">Multiplier: x1</div>
+        <div id="player"></div>
+        <div class="difficulty-indicator">
+            <span>Difficulty:</span>
+            <div class="difficulty-meter">
+                <div class="difficulty-fill" id="difficulty-fill"></div>
+            </div>
+        </div>
+        <div id="game-over" class="game-screen">
+            <h2>Game Over!</h2>
+            <div id="final-score">Score: 0</div>
+            <div id="high-score">High Score: 0</div>
+            <button id="restart-btn" class="game-btn">Play Again</button>
+        </div>
+        <div id="win-screen" class="game-screen">
+            <h2 class="win-title">You Win!</h2>
+            <div class="win-message">Congratulations! You've reached level 50 and mastered the game!</div>
+            <div id="final-win-score">Final Score: 0</div>
+            <div id="win-high-score">High Score: 0</div>
+            <button id="play-again-btn" class="game-btn">Play Again</button>
+        </div>
+        <div id="start-screen" class="game-screen">
+            <h1>Collect and Dodge</h1>
+            <div id="instructions">
+                <p><strong>HOW TO PLAY:</strong></p>
+                <p>Use <strong>arrow keys</strong> or <strong>WASD</strong> to move your character</p>
+                
+                <div class="collectible-info">
+                    <div class="collectible-item">
+                        <div class="collectible-display" style="background-color: #ffd700;"></div>
+                        <span>Yellow: 10 pts</span>
+                    </div>
+                    <div class="collectible-item">
+                        <div class="collectible-display" style="background-color: #da22ff;"></div>
+                        <span>Purple: 25 pts</span>
+                    </div>
+                    <div class="collectible-item">
+                        <div class="collectible-display" style="background-color: #00d2d3;"></div>
+                        <span>Teal: 50 pts</span>
+                    </div>
+                </div>
+                
+                <p>Avoid <span style="color: #ff5252;">■</span> red squares!</p>
+                <p>Grab <span class="power-up-display"></span> shield power-ups for temporary protection</p>
+                
+                <div class="objectives-section">
+                    <p><strong>OBJECTIVE:</strong> Reach level 50 to win the game!</p>
+                </div>
+            </div>
+            <button id="start-btn" class="game-btn">Start Game</button>
+        </div>
+    </div>
+
+    <script>
+        // Game variables
+        const gameContainer = document.getElementById('game-container');
+        const player = document.getElementById('player');
+        const scoreDisplay = document.getElementById('score');
+        const timerDisplay = document.getElementById('timer');
+        const levelDisplay = document.getElementById('level');
+        const gameOverScreen = document.getElementById('game-over');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const highScoreDisplay = document.getElementById('high-score');
+        const restartBtn = document.getElementById('restart-btn');
+        const startScreen = document.getElementById('start-screen');
+        const startBtn = document.getElementById('start-btn');
+        const difficultyFill = document.getElementById('difficulty-fill');
+        const comboDisplay = document.getElementById('combo-display');
+        const multiplierDisplay = document.getElementById('multiplier-display');
+        const starsContainer = document.getElementById('stars-container');
+        const winScreen = document.getElementById('win-screen');
+        const finalWinScoreDisplay = document.getElementById('final-win-score');
+        const winHighScoreDisplay = document.getElementById('win-high-score');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        
+        // Game configuration
+        const CONFIG = {
+            // Base values
+            baseObstacleSpeed: 2,
+            basePlayerSpeed: 5,
+            baseObstacleSpawnRate: 2000,
+            baseCollectibleSpawnRate: 1500,
+            basePowerUpSpawnRate: 10000,
+            baseObstacleSize: 40,
+            baseTimerIncrement: 10,
+            initialTime: 60,
+            
+            // Difficulty scaling factors
+            maxDifficulty: 10, // Maximum difficulty level internally (not displayed to user)
+            obstacleSpeedScale: 0.4, // How much obstacle speed increases per difficulty level
+            obstacleSpawnRateScale: 200, // How much spawn rate decreases per difficulty level
+            collectibleSpawnRateScale: 100, // How much collectible spawn rate decreases per difficulty level
+            obstacleSizeScale: 5, // How much obstacle size increases per difficulty level
+            obstacleSpinThreshold: 5, // At what difficulty level obstacles start spinning
+            
+            // Levels and scoring
+            pointsPerLevel: 50, // Points needed to level up
+            maxLevel: 50, // Maximum level (win condition)
+            maxDisplayLevel: 50, // Maximum displayed level
+            timeIncrementScale: 1, // Reduction in time bonus per level
+            
+            // Special effects
+            shakingThreshold: 3, // At what difficulty level the screen starts to shake
+            colorChangeThreshold: 7, // At what difficulty level the game colors intensify
+            
+            // Combo system
+            comboTimeout: 2000, // Time in ms before combo resets (2 seconds)
+            maxCombo: 10, // Maximum combo multiplier
+            maxMultiplier: 3, // Maximum score multiplier
+        };
+        
+        let score = 0;
+        let highScore = localStorage.getItem('highScore') || 0;
+        let timeLeft = CONFIG.initialTime;
+        let level = 1;
+        let difficulty = 1; // Internal difficulty tracker, increases more rapidly than level
+        let gameActive = true;
+        let playerX = 400;
+        let playerY = 250;
+        let playerSpeed = CONFIG.basePlayerSpeed;
+        let collectibles = [];
+        let obstacles = [];
+        let powerUps = [];
+        let keysPressed = {};
+        let obstacleSpeed = CONFIG.baseObstacleSpeed;
+        let obstacleSpawnRate = CONFIG.baseObstacleSpawnRate;
+        let collectibleSpawnRate = CONFIG.baseCollectibleSpawnRate;
+        let powerUpSpawnRate = CONFIG.basePowerUpSpawnRate;
+        let obstacleSize = CONFIG.baseObstacleSize;
+        let obstacleInterval;
+        let collectibleInterval;
+        let powerUpInterval;
+        let timerInterval;
+        let shieldActive = false;
+        let shield = null;
+        let screenShaking = false;
+        let combo = 0;
+        let comboTimer = null;
+        let scoreMultiplier = 1;
+        
+        // Create starry background
+        function createStars() {
+            // Clear existing stars
+            starsContainer.innerHTML = '';
+            
+            // Create stars
+            const starCount = 100;
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                
+                // Random position
+                const x = Math.random() * 100;
+                const y = Math.random() * 100;
+                
+                // Random size
+                const size = Math.random() * 2 + 1;
+                
+                // Random animation duration
+                const duration = Math.random() * 5 + 3;
+                
+                star.style.left = `${x}%`;
+                star.style.top = `${y}%`;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.animationDuration = `${duration}s`;
+                star.style.animationDelay = `${Math.random() * duration}s`;
+                
+                starsContainer.appendChild(star);
+            }
+        }
+        
+        // Initialize game
+        function initGame() {
+            // Reset variables
+            score = 0;
+            timeLeft = CONFIG.initialTime;
+            level = 1;
+            difficulty = 1;
+            gameActive = true;
+            playerX = 400;
+            playerY = 250;
+            playerSpeed = CONFIG.basePlayerSpeed;
+            obstacleSpeed = CONFIG.baseObstacleSpeed;
+            obstacleSpawnRate = CONFIG.baseObstacleSpawnRate;
+            collectibleSpawnRate = CONFIG.baseCollectibleSpawnRate;
+            powerUpSpawnRate = CONFIG.basePowerUpSpawnRate;
+            obstacleSize = CONFIG.baseObstacleSize;
+            shieldActive = false;
+            screenShaking = false;
+            combo = 0;
+            scoreMultiplier = 1;
+            
+            // Reset combo display
+            comboDisplay.style.opacity = '0';
+            multiplierDisplay.style.opacity = '0';
+            
+            // Reset game visuals
+            gameContainer.style.transform = 'none';
+            gameContainer.style.filter = 'none';
+            
+            // Update display
+            updateDisplays();
+            updateDifficultyMeter();
+            
+            // Clear existing elements
+            collectibles.forEach(c => c.element.remove());
+            obstacles.forEach(o => o.element.remove());
+            powerUps.forEach(p => p.element.remove());
+            if (shield) shield.remove();
+            collectibles = [];
+            obstacles = [];
+            powerUps = [];
+            shield = null;
+            
+            // Remove all celebration confetti
+            const celebrations = document.querySelectorAll('.celebration');
+            celebrations.forEach(el => el.remove());
+            
+            // Hide game over and win screens
+            gameOverScreen.style.display = 'none';
+            winScreen.style.display = 'none';
+            
+            // Position player
+            updatePlayerPosition();
+            
+            // Start spawning
+            startIntervals();
+            
+            // Start game loop
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function updateDisplays() {
+            scoreDisplay.textContent = `Score: ${score}`;
+            timerDisplay.textContent = `Time: ${timeLeft}`;
+            levelDisplay.textContent = `Level: ${level}`;
+            highScoreDisplay.textContent = `High Score: ${highScore}`;
+        }
+        
+        function updateDifficultyMeter() {
+            // Calculate fill percentage based on current difficulty
+            const percentage = Math.min((difficulty - 1) / (CONFIG.maxDifficulty - 1) * 100, 100);
+            difficultyFill.style.width = `${percentage}%`;
+            
+            // Change color as difficulty increases
+            if (difficulty >= CONFIG.colorChangeThreshold) {
+                difficultyFill.style.background = 'linear-gradient(90deg, #ff5252, #ff0000)';
+            } else if (difficulty >= CONFIG.shakingThreshold) {
+                difficultyFill.style.background = 'linear-gradient(90deg, #ffa726, #ff5252)';
+            } else {
+                difficultyFill.style.background = 'linear-gradient(90deg, #4facfe, #00f2fe)';
+            }
+        }
+        
+        function startIntervals() {
+            clearAllIntervals();
+            obstacleInterval = setInterval(spawnObstacle, obstacleSpawnRate);
+            collectibleInterval = setInterval(spawnCollectible, collectibleSpawnRate);
+            powerUpInterval = setInterval(spawnPowerUp, powerUpSpawnRate);
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+        
+        function clearAllIntervals() {
+            clearInterval(obstacleInterval);
+            clearInterval(collectibleInterval);
+            clearInterval(powerUpInterval);
+            clearInterval(timerInterval);
+        }
+
+        // Handle keyboard input
+        document.addEventListener('keydown', (e) => {
+            keysPressed[e.key] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keysPressed[e.key] = false;
+        });
+
+        // Player movement
+        function movePlayer() {
+            if (keysPressed['ArrowUp'] || keysPressed['w']) {
+                playerY = Math.max(playerY - playerSpeed, 0);
+            }
+            if (keysPressed['ArrowDown'] || keysPressed['s']) {
+                playerY = Math.min(playerY + playerSpeed, gameContainer.offsetHeight - player.offsetHeight);
+            }
+            if (keysPressed['ArrowLeft'] || keysPressed['a']) {
+                playerX = Math.max(playerX - playerSpeed, 0);
+            }
+            if (keysPressed['ArrowRight'] || keysPressed['d']) {
+                playerX = Math.min(playerX + playerSpeed, gameContainer.offsetWidth - player.offsetWidth);
+            }
+            
+            updatePlayerPosition();
+        }
+        
+        function updatePlayerPosition() {
+            player.style.left = `${playerX}px`;
+            player.style.top = `${playerY}px`;
+            
+            // Update shield position if active
+            if (shieldActive && shield) {
+                shield.style.left = `${playerX - 10}px`;
+                shield.style.top = `${playerY - 10}px`;
+            }
+        }
+
+        // Spawn collectible
+        function spawnCollectible() {
+            if (!gameActive) return;
+            
+            const collectible = document.createElement('div');
+            
+            // Adjust rarity based on difficulty
+            // Higher difficulty increases the chance of rare collectibles
+            let commonChance = Math.max(0.7 - (difficulty * 0.03), 0.4);
+            let rareChance = Math.min(0.25 + (difficulty * 0.02), 0.4);
+            let specialChance = Math.min(0.05 + (difficulty * 0.01), 0.2);
+            
+            // Normalize chances to ensure they add up to 1
+            const total = commonChance + rareChance + specialChance;
+            commonChance /= total;
+            rareChance /= total;
+            specialChance /= total;
+            
+            // Random collectible type
+            const collectibleType = Math.random();
+            let type, className, width, height, points;
+            
+            if (collectibleType < commonChance) {
+                // Common collectible
+                type = 'common';
+                className = 'collectible';
+                width = 20;
+                height = 20;
+                points = 10;
+            } else if (collectibleType < commonChance + rareChance) {
+                // Rare collectible
+                type = 'rare';
+                className = 'collectible-rare';
+                width = 15;
+                height = 15;
+                points = 25;
+            } else {
+                // Special collectible
+                type = 'special';
+                className = 'collectible-special';
+                width = 25;
+                height = 25;
+                points = 50;
+            }
+            
+            collectible.className = className;
+            
+            const x = Math.random() * (gameContainer.offsetWidth - width);
+            const y = Math.random() * (gameContainer.offsetHeight - height);
+            
+            collectible.style.left = `${x}px`;
+            collectible.style.top = `${y}px`;
+            
+            gameContainer.appendChild(collectible);
+            
+            collectibles.push({
+                element: collectible,
+                x,
+                y,
+                width,
+                height,
+                type,
+                points
+            });
+        }
+
+        // Create particle effect
+        function createParticles(x, y, type = 'common') {
+            const particleCount = 10;
+            let color;
+            
+            // Set color based on collectible type
+            switch(type) {
+                case 'common':
+                    color = '#ffd700'; // Yellow
+                    break;
+                case 'rare':
+                    color = '#da22ff'; // Purple
+                    break;
+                case 'special':
+                    color = '#00d2d3'; // Teal
+                    break;
+                default:
+                    color = '#ffd700';
+            }
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.backgroundColor = color;
+                
+                // Position at the collection point
+                particle.style.left = `${x + 10}px`;
+                particle.style.top = `${y + 10}px`;
+                
+                gameContainer.appendChild(particle);
+                
+                // Random direction
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 1 + Math.random() * 3;
+                const vx = Math.cos(angle) * speed;
+                const vy = Math.sin(angle) * speed;
+                
+                // Animate and remove
+                let posX = x + 10;
+                let posY = y + 10;
+                let opacity = 1;
+                let scale = 1;
+                
+                const animate = () => {
+                    if (opacity <= 0) {
+                        particle.remove();
+                        return;
+                    }
+                    
+                    posX += vx;
+                    posY += vy;
+                    opacity -= 0.02;
+                    scale -= 0.01;
+                    
+                    particle.style.left = `${posX}px`;
+                    particle.style.top = `${posY}px`;
+                    particle.style.opacity = opacity;
+                    particle.style.transform = `scale(${scale})`;
+                    
+                    requestAnimationFrame(animate);
+                };
+                
+                requestAnimationFrame(animate);
+            }
+        }
+
+        // Spawn obstacle
+        function spawnObstacle() {
+            if (!gameActive) return;
+            
+            const obstacle = document.createElement('div');
+            obstacle.className = 'obstacle';
+            
+            // Adjust obstacle size based on difficulty
+            const size = Math.min(obstacleSize + Math.floor(Math.random() * 10) - 5, 60);
+            obstacle.style.width = `${size}px`;
+            obstacle.style.height = `${size}px`;
+            
+            // Add rotation for higher difficulties
+            if (difficulty >= CONFIG.obstacleSpinThreshold) {
+                const rotationSpeed = Math.random() * 2 + 1;
+                const direction = Math.random() < 0.5 ? 1 : -1;
+                obstacle.style.animation = `spin ${rotationSpeed}s linear infinite`;
+                
+                // Add keyframe animation for spinning
+                if (!document.getElementById('spin-animation')) {
+                    const styleSheet = document.createElement('style');
+                    styleSheet.id = 'spin-animation';
+                    styleSheet.textContent = `
+                        @keyframes spin {
+                            from { transform: rotate(0deg); }
+                            to { transform: rotate(${360 * direction}deg); }
+                        }
+                    `;
+                    document.head.appendChild(styleSheet);
+                }
+            }
+            
+            // Randomly choose which side to spawn from
+            const side = Math.floor(Math.random() * 4);
+            let x, y, vx = 0, vy = 0;
+            
+            switch(side) {
+                case 0: // Top
+                    x = Math.random() * gameContainer.offsetWidth;
+                    y = -size;
+                    vy = obstacleSpeed;
+                    break;
+                case 1: // Right
+                    x = gameContainer.offsetWidth;
+                    y = Math.random() * gameContainer.offsetHeight;
+                    vx = -obstacleSpeed;
+                    break;
+                case 2: // Bottom
+                    x = Math.random() * gameContainer.offsetWidth;
+                    y = gameContainer.offsetHeight;
+                    vy = -obstacleSpeed;
+                    break;
+                case 3: // Left
+                    x = -size;
+                    y = Math.random() * gameContainer.offsetHeight;
+                    vx = obstacleSpeed;
+                    break;
+            }
+            
+            // Add slight randomness to velocity
+            if (difficulty > 3) {
+                const speedVariation = obstacleSpeed * 0.3;
+                if (vx !== 0) vx += (Math.random() * speedVariation) - (speedVariation/2);
+                if (vy !== 0) vy += (Math.random() * speedVariation) - (speedVariation/2);
+            }
+            
+            obstacle.style.left = `${x}px`;
+            obstacle.style.top = `${y}px`;
+            
+            gameContainer.appendChild(obstacle);
+            
+            obstacles.push({
+                element: obstacle,
+                x,
+                y,
+                width: size,
+                height: size,
+                vx,
+                vy
+            });
+        }
+
+        // Spawn power-up
+        function spawnPowerUp() {
+            if (!gameActive) return;
+            
+            const powerUp = document.createElement('div');
+            powerUp.className = 'power-up';
+            
+            const x = Math.random() * (gameContainer.offsetWidth - 25);
+            const y = Math.random() * (gameContainer.offsetHeight - 25);
+            
+            powerUp.style.left = `${x}px`;
+            powerUp.style.top = `${y}px`;
+            
+            gameContainer.appendChild(powerUp);
+            
+            powerUps.push({
+                element: powerUp,
+                x,
+                y,
+                width: 25,
+                height: 25
+            });
+        }
+
+        // Update timer
+        function updateTimer() {
+            if (!gameActive) return;
+            
+            timeLeft--;
+            timerDisplay.textContent = `Time: ${timeLeft}`;
+            
+            if (timeLeft <= 0) {
+                endGame();
+            }
+        }
+
+        // Handle combo system
+        function incrementCombo() {
+            // Clear existing timer
+            if (comboTimer) {
+                clearTimeout(comboTimer);
+            }
+            
+            // Increment combo
+            combo = Math.min(combo + 1, CONFIG.maxCombo);
+            
+            // Calculate score multiplier based on combo
+            scoreMultiplier = 1 + (combo / CONFIG.maxCombo) * (CONFIG.maxMultiplier - 1);
+            
+            // Update displays
+            comboDisplay.textContent = `Combo: x${combo}`;
+            multiplierDisplay.textContent = `Multiplier: x${scoreMultiplier.toFixed(1)}`;
+            
+            // Show combo display
+            comboDisplay.style.opacity = '1';
+            multiplierDisplay.style.opacity = '1';
+            
+            // Set timer to reset combo
+            comboTimer = setTimeout(() => {
+                resetCombo();
+            }, CONFIG.comboTimeout);
+        }
+        
+        function resetCombo() {
+            combo = 0;
+            scoreMultiplier = 1;
+            comboDisplay.style.opacity = '0';
+            multiplierDisplay.style.opacity = '0';
+        }
+
+        // Check collisions
+        function checkCollisions() {
+            // Check collectible collisions
+            collectibles.forEach((collectible, index) => {
+                if (checkCollision(
+                    playerX, playerY, player.offsetWidth, player.offsetHeight,
+                    collectible.x, collectible.y, collectible.width, collectible.height
+                )) {
+                    // Create particle effect at collection point
+                    createParticles(collectible.x, collectible.y, collectible.type);
+                    
+                    // Collect item
+                    collectible.element.remove();
+                    collectibles.splice(index, 1);
+                    
+                    // Increment combo
+                    incrementCombo();
+                    
+                    // Add points based on collectible type and multiplier
+                    const basePoints = collectible.points;
+                    const pointsEarned = Math.round(basePoints * scoreMultiplier);
+                    score += pointsEarned;
+                    scoreDisplay.textContent = `Score: ${score}`;
+                    
+                    // Show points earned
+                    showPointsEarned(collectible.x, collectible.y, pointsEarned);
+                    
+                    // Flash player based on collectible type
+                    let flashColor;
+                    switch(collectible.type) {
+                        case 'common':
+                            flashColor = 'rgba(255, 215, 0, 1)'; // Yellow
+                            break;
+                        case 'rare':
+                            flashColor = 'rgba(218, 34, 255, 1)'; // Purple
+                            break;
+                        case 'special':
+                            flashColor = 'rgba(0, 210, 211, 1)'; // Teal
+                            break;
+                        default:
+                            flashColor = 'rgba(255, 215, 0, 1)';
+                    }
+                    
+                    player.style.boxShadow = `0 0 20px ${flashColor}`;
+                    setTimeout(() => {
+                        player.style.boxShadow = '0 0 15px rgba(79, 172, 254, 0.7)';
+                    }, 300);
+                    
+                    // Level up if reaching point threshold
+                    if (score >= level * CONFIG.pointsPerLevel) {
+                        levelUp();
+                    }
+                }
+            });
+            
+            // Check power-up collisions
+            powerUps.forEach((powerUp, index) => {
+                if (checkCollision(
+                    playerX, playerY, player.offsetWidth, player.offsetHeight,
+                    powerUp.x, powerUp.y, powerUp.width, powerUp.height
+                )) {
+                    // Collect power-up
+                    powerUp.element.remove();
+                    powerUps.splice(index, 1);
+                    
+                    // Activate shield
+                    activateShield();
+                }
+            });
+            
+            // Check obstacle collisions
+            obstacles.forEach((obstacle) => {
+                if (checkCollision(
+                    playerX, playerY, player.offsetWidth, player.offsetHeight,
+                    obstacle.x, obstacle.y, obstacle.width, obstacle.height
+                )) {
+                    if (shieldActive) {
+                        // Shield protects player
+                        obstacle.element.remove();
+                        obstacles.splice(obstacles.indexOf(obstacle), 1);
+                        
+                        // Create explosion effect
+                        createExplosion(obstacle.x, obstacle.y);
+                        
+                        // Deactivate shield after blocking one hit
+                        deactivateShield();
+                    } else {
+                        endGame();
+                    }
+                }
+            });
+        }
+        
+        function createExplosion(x, y) {
+            const explosion = document.createElement('div');
+            explosion.style.position = 'absolute';
+            explosion.style.left = `${x}px`;
+            explosion.style.top = `${y}px`;
+            explosion.style.width = '50px';
+            explosion.style.height = '50px';
+            explosion.style.backgroundColor = 'transparent';
+            explosion.style.borderRadius = '50%';
+            explosion.style.zIndex = '8';
+            explosion.style.boxShadow = '0 0 30px rgba(255, 82, 82, 0.9)';
+            explosion.style.animation = 'explode 0.5s forwards';
+            
+            // Create keyframe animation for explosion
+            if (!document.getElementById('explosion-animation')) {
+                const styleSheet = document.createElement('style');
+                styleSheet.id = 'explosion-animation';
+                styleSheet.textContent = `
+                    @keyframes explode {
+                        0% { transform: scale(0); opacity: 1; }
+                        100% { transform: scale(3); opacity: 0; }
+                    }
+                `;
+                document.head.appendChild(styleSheet);
+            }
+            
+            gameContainer.appendChild(explosion);
+            
+            // Remove after animation completes
+            setTimeout(() => {
+                explosion.remove();
+            }, 500);
+        }
+        
+        function checkCollision(x1, y1, w1, h1, x2, y2, w2, h2) {
+            return x1 < x2 + w2 &&
+                   x1 + w1 > x2 &&
+                   y1 < y2 + h2 &&
+                   y1 + h1 > y2;
+        }
+
+        // Level up
+        function levelUp() {
+            // Increase level
+            level++;
+            
+            // Check if player reached max level (win condition)
+            if (level >= CONFIG.maxLevel) {
+                winGame();
+                return;
+            }
+            
+            // Increase internal difficulty
+            difficulty = Math.min(difficulty + 0.5, CONFIG.maxDifficulty);
+            
+            levelDisplay.textContent = `Level: ${level}`;
+            updateDifficultyMeter();
+            
+            // Create level up effect
+            const levelUpText = document.createElement('div');
+            levelUpText.textContent = 'LEVEL UP!';
+            levelUpText.style.position = 'absolute';
+            levelUpText.style.top = '50%';
+            levelUpText.style.left = '50%';
+            levelUpText.style.transform = 'translate(-50%, -50%)';
+            levelUpText.style.color = 'white';
+            levelUpText.style.fontSize = '36px';
+            levelUpText.style.fontWeight = 'bold';
+            levelUpText.style.textShadow = '0 0 20px rgba(79, 172, 254, 1)';
+            levelUpText.style.zIndex = '30';
+            levelUpText.style.fontFamily = "'Orbitron', sans-serif";
+            levelUpText.style.opacity = '0';
+            levelUpText.style.animation = 'levelUpFade 2s forwards';
+            
+            // Create keyframe animation for level-up text
+            if (!document.getElementById('level-up-animation')) {
+                const styleSheet = document.createElement('style');
+                styleSheet.id = 'level-up-animation';
+                styleSheet.textContent = `
+                    @keyframes levelUpFade {
+                        0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+                        50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+                        100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+                    }
+                `;
+                document.head.appendChild(styleSheet);
+            }
+            
+            gameContainer.appendChild(levelUpText);
+            
+            // Remove after animation completes
+            setTimeout(() => {
+                levelUpText.remove();
+            }, 2000);
+            
+            // Increase difficulty
+            obstacleSpeed = CONFIG.baseObstacleSpeed + (difficulty * CONFIG.obstacleSpeedScale);
+            obstacleSize = CONFIG.baseObstacleSize + (difficulty * CONFIG.obstacleSizeScale);
+            
+            // Adjust player speed to give a chance with faster obstacles
+            playerSpeed = CONFIG.basePlayerSpeed + (difficulty * 0.3);
+            
+            // Speed up spawning
+            obstacleSpawnRate = Math.max(500, CONFIG.baseObstacleSpawnRate - (difficulty * CONFIG.obstacleSpawnRateScale));
+            collectibleSpawnRate = Math.max(500, CONFIG.baseCollectibleSpawnRate - (difficulty * CONFIG.collectibleSpawnRateScale));
+            
+            // Update intervals with new rates
+            clearInterval(obstacleInterval);
+            clearInterval(collectibleInterval);
+            obstacleInterval = setInterval(spawnObstacle, obstacleSpawnRate);
+            collectibleInterval = setInterval(spawnCollectible, collectibleSpawnRate);
+            
+            // Add time bonus (decreases as level increases)
+            const timeBonus = Math.max(
+                5, 
+                CONFIG.baseTimerIncrement - (level * CONFIG.timeIncrementScale)
+            );
+            timeLeft += timeBonus;
+            timerDisplay.textContent = `Time: ${timeLeft}`;
+            
+            // Start screen shaking effect at higher difficulties
+            if (difficulty >= CONFIG.shakingThreshold && !screenShaking) {
+                startScreenShake();
+            }
+            
+            // Change game colors at very high difficulties
+            if (difficulty >= CONFIG.colorChangeThreshold) {
+                gameContainer.style.filter = `hue-rotate(${(difficulty - CONFIG.colorChangeThreshold) * 20}deg) saturate(${1 + (difficulty - CONFIG.colorChangeThreshold) * 0.1})`;
+            }
+        }
+
+        // Start screen shaking effect
+        function startScreenShake() {
+            screenShaking = true;
+            
+            const shakeInterval = setInterval(() => {
+                if (!gameActive || difficulty < CONFIG.shakingThreshold) {
+                    clearInterval(shakeInterval);
+                    gameContainer.style.transform = 'none';
+                    screenShaking = false;
+                    return;
+                }
+                
+                // Intensity increases with difficulty
+                const intensity = (difficulty - CONFIG.shakingThreshold) * 0.5;
+                const x = Math.random() * intensity - intensity/2;
+                const y = Math.random() * intensity - intensity/2;
+                
+                gameContainer.style.transform = `translate(${x}px, ${y}px)`;
+            }, 50);
+        }
+
+        // Update obstacles
+        function updateObstacles() {
+            obstacles.forEach((obstacle, index) => {
+                obstacle.x += obstacle.vx;
+                obstacle.y += obstacle.vy;
+                
+                obstacle.element.style.left = `${obstacle.x}px`;
+                obstacle.element.style.top = `${obstacle.y}px`;
+                
+                // Remove off-screen obstacles
+                if (
+                    obstacle.x < -100 ||
+                    obstacle.x > gameContainer.offsetWidth + 100 ||
+                    obstacle.y < -100 ||
+                    obstacle.y > gameContainer.offsetHeight + 100
+                ) {
+                    obstacle.element.remove();
+                    obstacles.splice(index, 1);
+                }
+            });
+        }
+        
+        // Update power-ups
+        function updatePowerUps() {
+            powerUps.forEach((powerUp, index) => {
+                // Remove power-ups after 5 seconds
+                if (!powerUp.timeCreated) {
+                    powerUp.timeCreated = Date.now();
+                } else if (Date.now() - powerUp.timeCreated > 5000) {
+                    powerUp.element.remove();
+                    powerUps.splice(index, 1);
+                }
+            });
+        }
+
+        // Activate shield
+        function activateShield() {
+            if (shieldActive) return;
+            
+            shieldActive = true;
+            
+            // Create shield visual
+            shield = document.createElement('div');
+            shield.className = 'shield';
+            shield.style.left = `${playerX - 10}px`;
+            shield.style.top = `${playerY - 10}px`;
+            gameContainer.appendChild(shield);
+            
+            // Set timeout to deactivate shield
+            setTimeout(() => {
+                deactivateShield();
+            }, 5000);
+        }
+        
+        // Deactivate shield
+        function deactivateShield() {
+            shieldActive = false;
+            if (shield) {
+                shield.remove();
+                shield = null;
+            }
+        }
+
+        // End game
+        function endGame() {
+            gameActive = false;
+            
+            // Clean up intervals
+            clearAllIntervals();
+            
+            // Deactivate shield if active
+            if (shieldActive) {
+                deactivateShield();
+            }
+            
+            // Reset screen effects
+            gameContainer.style.transform = 'none';
+            
+            // Update high score if needed
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('highScore', highScore);
+            }
+            
+            // Show game over screen
+            finalScoreDisplay.textContent = `Score: ${score}`;
+            highScoreDisplay.textContent = `High Score: ${highScore}`;
+            gameOverScreen.style.display = 'flex';
+        }
+
+        // Display points earned animation
+        function showPointsEarned(x, y, points) {
+            const pointsText = document.createElement('div');
+            pointsText.textContent = `+${points}`;
+            pointsText.style.position = 'absolute';
+            pointsText.style.left = `${x}px`;
+            pointsText.style.top = `${y}px`;
+            pointsText.style.color = 'white';
+            pointsText.style.fontWeight = 'bold';
+            pointsText.style.fontSize = '18px';
+            pointsText.style.textShadow = '0 0 5px rgba(0, 0, 0, 0.7)';
+            pointsText.style.zIndex = '20';
+            pointsText.style.pointerEvents = 'none';
+            pointsText.style.animation = 'pointsFade 1s forwards';
+            
+            // Create animation for points
+            if (!document.getElementById('points-fade-animation')) {
+                const styleSheet = document.createElement('style');
+                styleSheet.id = 'points-fade-animation';
+                styleSheet.textContent = `
+                    @keyframes pointsFade {
+                        0% { transform: translateY(0); opacity: 1; }
+                        100% { transform: translateY(-30px); opacity: 0; }
+                    }
+                `;
+                document.head.appendChild(styleSheet);
+            }
+            
+            gameContainer.appendChild(pointsText);
+            
+            setTimeout(() => {
+                pointsText.remove();
+            }, 1000);
+        }
+
+        // Win game
+        function winGame() {
+            gameActive = false;
+            
+            // Clean up intervals
+            clearAllIntervals();
+            
+            // Deactivate shield if active
+            if (shieldActive) {
+                deactivateShield();
+            }
+            
+            // Reset screen effects
+            gameContainer.style.transform = 'none';
+            
+            // Update high score if needed
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('highScore', highScore);
+            }
+            
+            // Create celebration effect
+            createCelebration();
+            
+            // Show win screen
+            finalWinScoreDisplay.textContent = `Final Score: ${score}`;
+            winHighScoreDisplay.textContent = `High Score: ${highScore}`;
+            winScreen.style.display = 'flex';
+        }
+        
+        // Create celebration effect
+        function createCelebration() {
+            // Create confetti animation
+            for (let i = 0; i < 100; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'celebration';
+                    
+                    // Random color
+                    const colors = ['#ffd700', '#da22ff', '#00d2d3', '#4facfe', '#ffa726'];
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.backgroundColor = color;
+                    
+                    // Random size
+                    const size = Math.random() * 8 + 5;
+                    confetti.style.width = `${size}px`;
+                    confetti.style.height = `${size}px`;
+                    
+                    // Random starting position (from top)
+                    const x = Math.random() * gameContainer.offsetWidth;
+                    confetti.style.left = `${x}px`;
+                    confetti.style.top = '0px';
+                    
+                    // Add to container
+                    gameContainer.appendChild(confetti);
+                    
+                    // Animate falling with swaying
+                    let posY = 0;
+                    let posX = x;
+                    const fallSpeed = Math.random() * 3 + 2;
+                    const swayAmount = Math.random() * 5 + 1;
+                    const swaySpeed = Math.random() * 0.05 + 0.02;
+                    let rot = 0;
+                    const rotSpeed = Math.random() * 5 - 2.5;
+                    let time = 0;
+                    
+                    const fall = () => {
+                        if (posY > gameContainer.offsetHeight || !gameContainer.contains(confetti)) {
+                            if (confetti.parentNode) {
+                                confetti.remove();
+                            }
+                            return;
+                        }
+                        
+                        time += 0.016;
+                        posY += fallSpeed;
+                        posX += Math.sin(time * swaySpeed * 10) * swayAmount * 0.1;
+                        rot += rotSpeed;
+                        
+                        confetti.style.top = `${posY}px`;
+                        confetti.style.left = `${posX}px`;
+                        confetti.style.transform = `rotate(${rot}deg)`;
+                        
+                        requestAnimationFrame(fall);
+                    };
+                    
+                    requestAnimationFrame(fall);
+                }, Math.random() * 2000); // Staggered launch over 2 seconds
+            }
+        }
+
+        // Game loop
+        function gameLoop() {
+            if (!gameActive) return;
+            
+            movePlayer();
+            updateObstacles();
+            updatePowerUps();
+            checkCollisions();
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Document ready
+        document.addEventListener('DOMContentLoaded', () => {
+            createStars();
+        });
+
+        // Start game
+        restartBtn.addEventListener('click', initGame);
+        playAgainBtn.addEventListener('click', initGame);
+        startBtn.addEventListener('click', () => {
+            startScreen.style.display = 'none';
+            initGame();
+        });
+    </script>
+</body>
+</html>

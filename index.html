@@ -450,7 +450,7 @@
             </div>
             <div class="stat-container">
                 <span class="stat-icon">⬆️</span>
-                <span id="level">Level: 1</span>
+                <span id="level">Level: 1/50</span>
             </div>
             <div class="stat-container">
                 <span class="stat-icon">⏱️</span>
@@ -694,7 +694,7 @@
         function updateDisplays() {
             scoreDisplay.textContent = `Score: ${score}`;
             timerDisplay.textContent = `Time: ${timeLeft}`;
-            levelDisplay.textContent = `Level: ${level}`;
+            levelDisplay.textContent = `Level: ${level}/${CONFIG.maxLevel}`;
             highScoreDisplay.textContent = `High Score: ${highScore}`;
         }
         
@@ -1198,7 +1198,7 @@
             // Increase internal difficulty
             difficulty = Math.min(difficulty + 0.5, CONFIG.maxDifficulty);
             
-            levelDisplay.textContent = `Level: ${level}`;
+            levelDisplay.textContent = `Level: ${level}/${CONFIG.maxLevel}`;
             updateDifficultyMeter();
             
             // Create level up effect

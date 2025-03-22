@@ -1,4 +1,4 @@
-# CollectandDodge
+# Collect and Dodge
 
 A fast-paced browser-based arcade game where players collect coins while dodging obstacles to reach level 50 and win the game.
 
